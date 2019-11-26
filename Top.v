@@ -1,265 +1,178 @@
-`timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 11/26/2019 12:21:45 AM
-// Design Name: 
-// Module Name: Top
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------
+// Title         : Top
+// Project       : Project Lab 1
+//-----------------------------------------------------------------------------
+// File          : Top.v
+// Author        : Rice  <rice@rice-manjaro>
+// Created       : 26.11.2019
+// Last modified : 26.11.2019
+//-----------------------------------------------------------------------------
+// Description :
+// Top module for Eli, Zo, and Abu's group in Project Lab 1. 
+//-----------------------------------------------------------------------------
+// Copyright (c) 2019 by Texas Tech University This model is the confidential and
+// proprietary property of Texas Tech University and the possession or use of this
+// file requires a written license from Texas Tech University.
+//------------------------------------------------------------------------------
+// Modification history :
+// 26.11.2019 : created
+//-----------------------------------------------------------------------------
 
 
-module Top(
-    input clk, rst,
-    input [1:0] MMvalues, // Moisture meter values
-    input [2:0] IPS,  
-    input SensorA,        // SEN pins on the HBridge
-    input SensorB,        // SEN pins on the HBridge
-    input IR,
-    output [3:0] HBridgeIN,
-    output [1:0] HBridgeEN,
-    output [6:0] seg,
-    output [3:0] an,
-    output [3:0] Servo
-    );
-    // Databus of all the PWM's done signals
-    wire [5:0] PeriodFinished;
-    
-    // Done signal of the active servo PWM
-    wire ActivePeriodFinished,IRModuleDone,EnableIRModule,ResetIRModule;
 
-    // Duty cycles for the HBridge EN pins
-    wire [11:0] DutyA, DutyB;
+module Top
+  (/*AUTOARG*/
+   // Outputs
+   seg, an, HBridgeIN, HBridgeEN, Servo,
+   // Inputs
+   clk, SensorB, SensorA, MMvalues, IR, IPS
+   );
+   /*AUTOINPUT*/
+   // Beginning of automatic inputs (from unused autoinst inputs)
+   input [2:0]          IPS;                    // To u7 of IPSMovement.v
+   input                IR;                     // To u7 of IPSMovement.v
+   input [1:0]          MMvalues;               // To u8 of IRSensor.v
+   input                SensorA;                // To u6 of SevenSegment.v
+   input                SensorB;                // To u6 of SevenSegment.v
+   input                clk;                    // To u0 of PWM.v, ...
+   // End of automatics
+   output [3:0] HBridgeIN;
+   output [1:0] HBridgeEN;
+   output [3:0] Servo;
 
-    // Duty cycle of the active servo PWM
-    wire [20:0] ActiveServoDuty;
+   /*AUTOOUTPUT*/
+   // Beginning of automatic outputs (from unused autoinst outputs)
+   output [3:0]         an;                     // From u6 of SevenSegment.v
+   output [6:0]         seg;                    // From u6 of SevenSegment.v
+   // End of automatics
+   wire [3:0]           ServoPeriodFinished;    // From u2, u3, u4, u5 of PWM.v
+   /*AUTOWIRE*/
+   // Beginning of automatic wires (for undeclared instantiated-module outputs)
+   wire                 ActivePeriodFinished;   // From u9 of ServoMUX.v
+   wire [20:0]          ActiveServoDuty;        // From u8 of IRSensor.v
+   wire [3:0]           Direction;              // From u7 of IPSMovement.v
+   wire [11:0]          DutyA;                  // From u7 of IPSMovement.v
+   wire [11:0]          DutyB;                  // From u7 of IPSMovement.v
+   wire                 EnableIRModule;         // From u7 of IPSMovement.v
+   wire                 IRModuleDone;           // From u8 of IRSensor.v
+   wire                 PeriodFinished;         // From u0 of PWM.v, ...
+   wire                 ResetIRModule;          // From u7 of IPSMovement.v
+   wire [83:0]          ServoDuty;              // From u9 of ServoMUX.v
+   wire [1:0]           ServoNum;               // From u8 of IRSensor.v
+   // End of automatics
+   //--------------------------------
+   //If the 4000 is to move this direction for 4000 units of time, you should change to detection by
+   //  IPS, not time.
+   // ^^ That's not what the 4000 is. It's a parameter that determines the period of the PWM signal.
+   // The period is the time it takes for the Basys 3 to count that many clock cycles, in this case 4000
+   // clock cycles. Each clock cycle takes 10 ns. So the period is 4000 x 10ns, producing a 25kHz signal.
 
-    // All of the duty cycles for the four servos in one flattened databus
-    wire [83:0] ServoDuty;
+   PWM #(12,4000) u0 
+     (.width(DutyA[11:0]),
+      .PWM(HBridgeEN[0]),
+      /*AUTOINST*/
+      // Outputs
+      .PeriodFinished                   (PeriodFinished),
+      // Inputs
+      .clk                              (clk));
 
-    // HBridge IN pins
-    wire [3:0] Direction;
+   // RIGHT
+   PWM #(12,4000) u1
+     (.width(DutyB[11:0]),
+      .PWM(HBridgeEN[1]),
+      /*AUTOINST*/
+      // Outputs
+      .PeriodFinished                   (PeriodFinished),
+      // Inputs
+      .clk                              (clk));
 
-    // Select bit into ServoMUX
-    wire [1:0] ServoNum;
+   // Servo PWMs
+   // ARM    
+   //---------------------------------
+   //Parameter issue? Calling 21,2000000 but parameter in PWM module is set to SIZE=12 PERIOD=4000
+   // ^^ That's just the default. If you do not call the parameters from outside the module, it defaults to that value.
+   // Changing the value from outside the module is perfectly valid.
+   PWM #(21,2000000) u2 
+     (.width(ServoDuty[20:0]),
+      .PWM(Servo[0]),
+      .PeriodFinished(ServoPeriodFinished[0]),
+      /*AUTOINST*/
+      // Inputs
+      .clk                              (clk));
 
-    assign HBridgeIN = Direction;
-    
-//       assign led = sw;
+   // LEFT
+   PWM #(21,2000000) u3 
+     (.width(ServoDuty[41:21]),
+      .PWM(Servo[1]),
+      .PeriodFinished(ServoPeriodFinished[1]),
+      /*AUTOINST*/
+      // Inputs
+      .clk                              (clk));
 
-//       assign ServoDuty = (sw[2:0] == 3'b001) ? 20'd200000 :
+   // MIDDLE
+   PWM #(21,2000000) u4 
+     (.width(ServoDuty[62:42]),
+      .PWM(Servo[2]),
+      .PeriodFinished(ServoPeriodFinished[2]),
+      /*AUTOINST*/
+      // Inputs
+      .clk                              (clk));
 
-//                          (sw[2:0] == 3'b010) ? 20'd150000 :
+   // RIGHT
+   PWM #(21,2000000) u5 
+     (.width(ServoDuty[83:63]),
+      .PWM(Servo[3]),
+      .PeriodFinished(ServoPeriodFinished[3]),
+      /*AUTOINST*/
+      // Inputs
+      .clk                              (clk));    
 
-//                          (sw[2:0] == 3'b100) ? 20'd100000 : 20'd100000;
+   SevenSegment u6 
+     (/*AUTOINST*/
+      // Outputs
+      .an                               (an[3:0]),
+      .seg                              (seg[6:0]),
+      // Inputs
+      .Direction                        (Direction[3:0]),
+      .SensorA                          (SensorA),
+      .SensorB                          (SensorB),
+      .clk                              (clk));
 
+   IPSMovement u7 
+     (/*AUTOINST*/
+      // Outputs
+      .Direction                        (Direction[3:0]),
+      .DutyA                            (DutyA[11:0]),
+      .DutyB                            (DutyB[11:0]),
+      .EnableIRModule                   (EnableIRModule),
+      .ResetIRModule                    (ResetIRModule),
+      // Inputs
+      .IPS                              (IPS[2:0]),
+      .IR                               (IR),
+      .IRModuleDone                     (IRModuleDone),
+      .clk                              (clk));
 
-// PWMS
-    // HBridge EN PWMs
-    // LEFT
-//--------------------------------
-//If the 4000 is to move this direction for 4000 units of time, you should change to detection by
-//  IPS, not time. 
-    PWM #(12,4000) u0 (
-        .clock(clk),
-        .duty(DutyA),
-        .reset(rst),
-        .PWM(HBridgeEN[0]),
-        .done(PeriodFinished[0])
-    );
+   IRSensor u8
+     (/*AUTOINST*/
+      // Outputs
+      .ActiveServoDuty                  (ActiveServoDuty[20:0]),
+      .IRModuleDone                     (IRModuleDone),
+      .ServoNum                         (ServoNum[1:0]),
+      // Inputs
+      .ActivePeriodFinished             (ActivePeriodFinished),
+      .EnableIRModule                   (EnableIRModule),
+      .MMvalues                         (MMvalues[1:0]),
+      .ResetIRModule                    (ResetIRModule),
+      .clk                              (clk));
 
-    // RIGHT
-    PWM #(12,4000) u1 (
-        .clock(clk),
-        .duty(DutyB),
-        .reset(rst),
-        .PWM(HBridgeEN[1]),
-        .done(PeriodFinished[1])
-    );
+   ServoMUX u9 
+     (/*AUTOINST*/
+      // Outputs
+      .ActivePeriodFinished             (ActivePeriodFinished),
+      .ServoDuty                        (ServoDuty[83:0]),
+      // Inputs
+      .ActiveServoDuty                  (ActiveServoDuty[20:0]),
+      .ServoNum                         (ServoNum[1:0]),
+      .ServoPeriodFinished              (ServoPeriodFinished[3:0]));
 
-    // Servo PWMs
-    // ARM    
-    
-//---------------------------------
-//Parameter issue? Calling 21,2000000 but parameter in PWM module is set to SIZE=12 PERIOD=4000
-    PWM #(21,2000000) u2 (
-        .clock(clk),
-        .duty(ServoDuty[20:0]),
-        .reset(rst),
-        .PWM(Servo[0]),
-        .done(PeriodFinished[2])
-    );
-
-    // LEFT
-    PWM #(21,2000000) u3 (
-        .clock(clk),
-        .duty(ServoDuty[41:21]),
-        .reset(rst),
-        .PWM(Servo[1]),
-        .done(PeriodFinished[3])
-    );
-
-    // MIDDLE
-    PWM #(21,2000000) u4 (
-        .clock(clk),
-        .duty(ServoDuty[62:42]),
-        .reset(rst),
-        .PWM(Servo[2]),
-        .done(PeriodFinished[4])
-    );
-
-    // RIGHT
-    PWM #(21,2000000) u5 (
-        .clock(clk),
-        .duty(ServoDuty[83:63]),
-        .reset(rst),
-        .PWM(Servo[3]),
-        .done(PeriodFinished[5])
-    );    
-
-    SevenSegment u6 (
-        .clock(clk),
-        .SensorA(SensorA),
-        .SensorB(SensorB),
-        .DirectionS(Direction),
-        .an(an),
-        .seg(seg)
-    );
-
-    IPSMovement u7 (
-        .Clock(clk),
-        .Reset(rst),
-        .IPS(IPS),
-        .Direction(Direction),
-        .DutyA(DutyA),
-        .DutyB(DutyB),
-        .IR(IR),
-        .EnableIRModule(EnableIRModule),
-        .IRModuleDone(IRModuleDone),
-        .ResetIRModule(ResetIRModule)
-    );
-
-    IRsensor u8 (
-      .MMvalues(MMvalues),
-      .Clock(clk),
-      .Reset(ResetIRModule),
-      .ServoNum(ServoNum),
-      .ActivePeriodFinished(ActivePeriodFinished),
-      .ActiveServoDuty(ActiveServoDuty),
-      .EnableIRModule(EnableIRModule),
-      .IRModuleDone(IRModuleDone)
-    );
-
-      ServoMUX u9 (
-      .ServoDuty(ServoDuty),
-      .PeriodFinished(PeriodFinished[5:2]),
-      .ActivePeriodFinished(ActivePeriodFinished),
-      .ServoNum(ServoNum)
-    );
 endmodule
-
-//////////////////////////////////////////////////////////////////////////////////
-
-// Company: 
-
-// Engineer: 
-
-// 
-
-// Create Date: 10/16/2019 05:36:31 PM
-
-// Design Name: 
-
-// Module Name: PWM
-
-// Project Name: 
-
-// Target Devices: 
-
-// Tool Versions: 
-
-// Description: 
-
-// 
-
-// Dependencies: 
-
-// 
-
-// Revision:
-
-// Revision 0.01 - File Created
-
-// Additional Comments:
-
-// 
-
-//////////////////////////////////////////////////////////////////////////////////
-
-//module PWM #(parameter SIZE=12, PERIOD=4000)(
-
-
-
-//    input [SIZE-1:0] duty,
-
-//    input clock,
-
-//    input reset,
-
-//    output reg PWM,
-
-//    output done // Activates when the period is finished
-
-//    );
-
-    
-
-//   reg [SIZE-1:0] counter; 
-
-//    assign done = (counter == PERIOD) ? 1 : 0;
-
-    
-
-//    initial begin
-
-//        counter = 0;
-
-//    end
-
-    
-
-//    always@(posedge clock) begin
-
-//        if (counter >= PERIOD)
-
-//           counter = 0;
-
-//        else
-
-        
-
-//        begin
-
-//            counter=counter+1;
-
-//            PWM = (counter < duty)? 1:0;
-
-//        end
-
-                     
-
-//        end
-
-//endmodule
-

@@ -2,9 +2,9 @@
 
 
 module SevenSegment(
-    input clock,
+    input clk,
     input SensorA, SensorB,
-    input [3:0] DirectionS,
+    input [3:0] Direction,
     output [6:0] seg,
     output [3:0] an
     );
@@ -13,11 +13,11 @@ module SevenSegment(
     reg [18:0] count;
     initial count = 0;
 
-    always @ (posedge clock)
+    always @ (posedge clk)
         count = count + 1;
 
-    assign Dig0Seg = (DirectionS == 4'b1001) ? 7'b0000011 :
-                     (DirectionS == 4'b0110) ? 7'b0001110 : 7'b1111111;
+    assign Dig0Seg = (Direction == 4'b1001) ? 7'b0000011 :
+                     (Direction == 4'b0110) ? 7'b0001110 : 7'b1111111;
                      
     assign {Dig3Seg,Dig2Seg,Dig1Seg} = (SensorA || SensorB) ? {7'b0010001, 7'b0000110, 7'b0010010}:
                                                               {7'b0101011, 7'b0100011, 7'b1111111};    

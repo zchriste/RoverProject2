@@ -21,27 +21,27 @@
 
 
 module PWM #(parameter SIZE=12, PERIOD=4000)(
-    input [SIZE-1:0] duty,
-    input clock,
-    input reset,
-    output reg PWM,
-    output done // Activates when the period is finished
+    input            clk,
+    input [SIZE-1:0] width,
+    output reg       PWM,
+    output           PeriodFinished // Activates when the period is finished
     );
     
-    reg [SIZE-1:0] counter; 
-    assign done = (counter == PERIOD) ? 1 : 0;
+   reg [SIZE-1:0] counter; 
+   assign PeriodFinished = (counter == PERIOD) ? 1 : 0;
 
-    initial begin
-        counter = 0;
-    end
-    
-    always@(posedge clock) begin
+   initial begin
+      counter = 0;
+   end
+   
+   always@(posedge clk) 
+     begin
         if (counter >= PERIOD)
-           counter = 0;
+          counter = 0;
         else
-        begin
-            counter=counter+1;
-            PWM = (counter < duty)? 1:0;
-        end                     
-        end
+          begin
+             counter=counter+1;
+             PWM = (counter < width)? 1:0;
+          end                     
+     end
 endmodule

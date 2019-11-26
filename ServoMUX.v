@@ -21,13 +21,13 @@
 
 // Help from Rice
 module ServoMUX(
-    input [3:0]   PeriodFinished,
+    input [3:0]   ServoPeriodFinished,
     input [1:0]   ServoNum,
     input [20:0]  ActiveServoDuty,
     output        ActivePeriodFinished,
     output [83:0] ServoDuty
     );    
-    assign ActivePeriodFinished = PeriodFinished[ServoNum];
+    assign ActivePeriodFinished = ServoPeriodFinished[ServoNum];
     assign ServoDuty = {21'd0, 21'd0, 21'd0, ActiveServoDuty}
             << 21 * ServoNum;
 endmodule
