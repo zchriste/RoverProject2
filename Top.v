@@ -1,25 +1,3 @@
-//-----------------------------------------------------------------------------
-// Title         : Top
-// Project       : Project Lab 1
-//-----------------------------------------------------------------------------
-// File          : Top.v
-// Author        : Rice  <rice@rice-manjaro>
-// Created       : 26.11.2019
-// Last modified : 26.11.2019
-//-----------------------------------------------------------------------------
-// Description :
-// Top module for Eli, Zo, and Abu's group in Project Lab 1. 
-//-----------------------------------------------------------------------------
-// Copyright (c) 2019 by Texas Tech University This model is the confidential and
-// proprietary property of Texas Tech University and the possession or use of this
-// file requires a written license from Texas Tech University.
-//------------------------------------------------------------------------------
-// Modification history :
-// 26.11.2019 : created
-//-----------------------------------------------------------------------------
-
-
-
 module Top
   (/*AUTOARG*/
    // Outputs
