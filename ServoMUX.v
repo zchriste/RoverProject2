@@ -19,24 +19,15 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
-
+// Help from Rice
 module ServoMUX(
-//    input done0,
-//    input done1,
-//    input done2,
-//    input done3,
-    input [3:0] PeriodFinished,
-    input [1:0] ServoNum,
-    output ActivePeriodFinished,
+    input [3:0]   PeriodFinished,
+    input [1:0]   ServoNum,
+    input [20:0]  ActiveServoDuty,
+    output        ActivePeriodFinished,
     output [83:0] ServoDuty
     );    
     assign ActivePeriodFinished = PeriodFinished[ServoNum];
-//    assign PeriodFinished =
-//        (ServoNum == 2'd0) ? done0:
-//        (ServoNum == 2'd1) ? done1:
-//        (ServoNum == 2'd2) ? done2:
-//        (ServoNum == 2'd3) ? done3:0;
-    assign ServoDuty = {21'd0, 21'd0, 21'd0, 21'd2000000}
+    assign ServoDuty = {21'd0, 21'd0, 21'd0, ActiveServoDuty}
             << 21 * ServoNum;
 endmodule
