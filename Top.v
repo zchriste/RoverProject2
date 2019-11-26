@@ -60,6 +60,8 @@ module Top
    wire [83:0]          ServoDuty;              // From u9 of ServoMUX.v
    wire [1:0]           ServoNum;               // From u8 of IRSensor.v
    // End of automatics
+
+   assign HBridgeIN = Direction;
    //--------------------------------
    //If the 4000 is to move this direction for 4000 units of time, you should change to detection by
    //  IPS, not time.
