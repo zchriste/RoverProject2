@@ -217,8 +217,9 @@ module IPSMovement
                    state_inner <= STOP;
                    Direction <= 4'b0;
                    {DutyA,DutyB} <= 24'd0;
-                end  
-            end // case: LINE_FOLLOW_IR, LINE_FOLLOW_NO_IR
+                end
+            endcase // case (state_inner)
+         end // case: LINE_FOLLOW_IR, LINE_FOLLOW_NO_IR
        
 
        MOVE_SERVOS: // State 2 for moving servos
@@ -236,7 +237,7 @@ module IPSMovement
                  state_outer <= LINE_FOLLOW_NO_IR;
               end
          end
-              
-              default: state_outer<=LINE_FOLLOW_IR;
-            endcase
-            endmodule
+       
+       default: state_outer<=LINE_FOLLOW_IR;
+     endcase // case (state_outer)
+endmodule
