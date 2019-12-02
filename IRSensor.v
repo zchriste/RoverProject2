@@ -30,7 +30,7 @@ module IRSensor(
     output reg        IRModuleDone // Finished moving all the servos to check the moisture, etc
     );
 
-   localparam LEFT=60_000, MIDDLE=150_000, RIGHT=240_000;
+   localparam LEFT=80_000, MIDDLE=150_000, RIGHT=240_000;
    localparam MOVE_ARM = 0, WAIT = 1, RESET_ARM = 2, WAIT_FROM_RESET = 3;      
 
    reg [6:0]   counter;
@@ -48,9 +48,6 @@ module IRSensor(
      {counter, state, flag, 
       IRModuleDone, ActiveServoDuty, 
       ServoNum, MMvalues_sync} = 0;
-   
-   // always @ (posedge clk)
-   //   MMvalues_sync <= MMvalues;
 
    always @(posedge clk)
      begin
@@ -79,7 +76,7 @@ module IRSensor(
             WAIT:
               begin
                  if (ActivePeriodFinished)
-                   if (counter < 1200) 
+                   if (counter < 120) 
                      counter <= counter + 1;
                    else
                      begin
@@ -103,7 +100,7 @@ module IRSensor(
             WAIT_FROM_RESET:
               begin
                  if (ActivePeriodFinished)
-                   if (counter < 80) 
+                   if (counter < 120) 
                      counter <= counter + 1;
                    else
                      begin
