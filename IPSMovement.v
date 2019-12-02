@@ -41,7 +41,8 @@ module IPSMovement
         {DutyA,DutyB} <=0;
         EnableIRModule<=0;
         Direction <=0;
-        state<=0;
+        state_outer<=0;
+        state_inner<=0;
      end        
 
    always @ (posedge clk)
