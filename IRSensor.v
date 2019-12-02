@@ -30,7 +30,7 @@ module IRSensor(
     output reg        IRModuleDone // Finished moving all the servos to check the moisture, etc
     );
 
-   localparam LEFT=100_000, MIDDLE=150_000, RIGHT=200_000;
+   localparam LEFT=60_000, MIDDLE=150_000, RIGHT=240_000;
    localparam MOVE_ARM = 0, WAIT = 1, RESET_ARM = 2, WAIT_FROM_RESET = 3;      
 
    reg [6:0]   counter;
@@ -49,32 +49,42 @@ module IRSensor(
       IRModuleDone, ActiveServoDuty, 
       ServoNum, MMvalues_sync} = 0;
    
-   always @ (posedge clk)
-     MMvalues_sync <= MMvalues;
+   // always @ (posedge clk)
+   //   MMvalues_sync <= MMvalues;
 
    always @(posedge clk)
      begin
         if (ResetIRModule)
-          {counter, state, flag, 
-           IRModuleDone, ActiveServoDuty, 
-           ServoNum} = 0;
+          begin
+             /*AUTORESET*/
+             // Beginning of autoreset for uninitialized flops
+             ActiveServoDuty <= 21'h0;
+             IRModuleDone <= 1'h0;
+             MMvalues_sync <= 2'h0;
+             ServoNum <= 2'h0;
+             counter <= 7'h0;
+             flag <= 1'h0;
+             state <= 2'h0;
+             // End of automatics
+          end  
         else if (EnableIRModule && ~IRModuleDone) 
           case (state) // If it's not counting
             MOVE_ARM:
               begin
                  ServoNum <=flag ? which_servo:0;    
-                 ActiveServoDuty <= RIGHT;
+                 ActiveServoDuty <= LEFT;
                  state <= WAIT;
               end
 
             WAIT:
               begin
                  if (ActivePeriodFinished)
-                   if (counter < 80) 
+                   if (counter < 1200) 
                      counter <= counter + 1;
                    else
                      begin
                         counter <= 0;
+                        MMvalues_sync <= MMvalues;
                         // Move the state back to initial state if we're done
                         // Otherwise, move the arm back up
                         state<=RESET_ARM;
@@ -85,7 +95,7 @@ module IRSensor(
             RESET_ARM:
               begin
                  ServoNum <= 0;    
-                 ActiveServoDuty <= LEFT;
+                 ActiveServoDuty <= RIGHT;
                  flag<=1;
                  state <= WAIT_FROM_RESET;
               end
